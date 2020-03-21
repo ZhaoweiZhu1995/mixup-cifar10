@@ -17,7 +17,8 @@ import torch.backends.cudnn as cudnn
 import torch.nn as nn
 import torch.optim as optim
 import torchvision.transforms as transforms
-import torchvision.datasets as datasets
+# import torchvision.datasets as datasets
+import datamanage.peerdatasets as datasets
 
 import models
 from utils import progress_bar
@@ -66,18 +67,27 @@ else:
     ])
 
 
+
+label_file_path = 'xxx.pt'
+# Train & peer
+trainset = datasets.CIFAR10(root='~/data', is_train=True,
+                                    transform=transform_train,
+                                    label_file_path=label_file_path,
+                                    selected_idx=range(40000),
+                                    is_download=True)
+
 transform_test = transforms.Compose([
     transforms.ToTensor(),
     transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
 ])
 
-trainset = datasets.CIFAR10(root='~/data', train=True, download=False,
-                            transform=transform_train)
+# trainset = datasets.CIFAR10(root='~/data', train=True, download=False,
+#                             transform=transform_train)
 trainloader = torch.utils.data.DataLoader(trainset,
                                           batch_size=args.batch_size,
                                           shuffle=True, num_workers=8)
 
-testset = datasets.CIFAR10(root='~/data', train=False, download=False,
+testset = datasets.CIFAR10(root='~/data', is_train=False, is_download=True,
                            transform=transform_test)
 testloader = torch.utils.data.DataLoader(testset, batch_size=100,
                                          shuffle=False, num_workers=8)
@@ -145,7 +155,7 @@ def train(epoch):
     reg_loss = 0
     correct = 0
     total = 0
-    for batch_idx, (inputs, targets) in enumerate(trainloader):
+    for batch_idx, (inputs, targets, _, _) in enumerate(trainloader):
         if use_cuda:
             inputs, targets = inputs.cuda(), targets.cuda()
 
@@ -178,7 +188,7 @@ def test(epoch):
     test_loss = 0
     correct = 0
     total = 0
-    for batch_idx, (inputs, targets) in enumerate(testloader):
+    for batch_idx, (inputs, targets,_,_) in enumerate(testloader):
         if use_cuda:
             inputs, targets = inputs.cuda(), targets.cuda()
         inputs, targets = Variable(inputs, volatile=True), Variable(targets)
